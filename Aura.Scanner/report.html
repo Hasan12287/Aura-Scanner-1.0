@@ -1,0 +1,273 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Security Report</title>
+    <style>
+        :root {
+            --bg-main: #0f1015;
+            --bg-panel: rgba(23, 25, 35, 0.85);
+            --accent-purple: #7928ca;
+            --accent-cyan: #00dfd8;
+            --accent-red: #ff4757;
+            --accent-warning: #ffa500;
+            --text-main: #f1f2f6;
+            --text-muted: #a4b0be;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-image: radial-gradient(at 0% 0%, rgba(121, 40, 202, 0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(0, 223, 216, 0.1) 0px, transparent 50%);
+        }
+
+        header {
+            height: 70px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .info-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+            .info-badge span {
+                color: var(--text-main);
+                font-weight: 600;
+                margin-left: 5px;
+            }
+
+        .container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 70px);
+        }
+
+        nav {
+            width: 250px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border-color);
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            padding: 14px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+            .nav-btn:hover {
+                background: rgba(255, 255, 255, 0.03);
+                color: var(--text-main);
+            }
+
+            .nav-btn.active {
+                background: linear-gradient(90deg, rgba(121, 40, 202, 0.2), transparent);
+                border-left: 3px solid var(--accent-cyan);
+                color: #fff;
+            }
+
+        main {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+            .tab-content.active {
+                display: block;
+            }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .table-container {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-muted);
+            padding: 14px;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+            word-break: break-all;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge-danger {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+        }
+
+        .badge-warning {
+            background: rgba(255, 165, 0, 0.15);
+            color: var(--accent-warning);
+            border: 1px solid rgba(255, 165, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-title">AURA SCANNER</div>
+        <div class="header-info">
+            <div class="info-badge">Kullanıcı: <span>{{USER_NAME}}</span></div>
+            <div class="info-badge">Format Tarihi: <span>{{INSTALL_DATE}}</span></div>
+            <div class="info-badge">Skor: <span style="color: var(--accent-red);">{{SCORE}}</span></div>
+            <div class="info-badge">Bulgu: <span>{{TOTAL_FINDINGS}}</span></div>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav>
+            <button class="nav-btn active" onclick="switchTab(event, 'high-threat')">⚠️ Yüksek Şüpheli</button>
+            <button class="nav-btn" onclick="switchTab(event, 'suspicious')">🔍 Şüpheli Dosyalar</button>
+            <button class="nav-btn" onclick="switchTab(event, 'fivem-rpf')">🎮 FiveM & RPF</button>
+            <button class="nav-btn" onclick="switchTab(event, 'deleted')">🗑️ Silinenler</button>
+        </nav>
+
+        <main>
+            <div id="high-threat" class="tab-content active">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th style="width: 20%;">Kategori</th><th style="width: 45%;">Yol</th><th style="width: 35%;">Mesaj</th></tr>
+                        </thead>
+                        <tbody>{{HIGH_THREAT_ROWS}}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="suspicious" class="tab-content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th style="width: 20%;">Kategori</th><th style="width: 45%;">Yol</th><th style="width: 35%;">Mesaj</th></tr>
+                        </thead>
+                        <tbody>{{SUSPICIOUS_ROWS}}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="fivem-rpf" class="tab-content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th style="width: 20%;">Kategori</th><th style="width: 45%;">Yol</th><th style="width: 35%;">Mesaj</th></tr>
+                        </thead>
+                        <tbody>{{FIVEM_ROWS}}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="deleted" class="tab-content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th style="width: 20%;">Kategori</th><th style="width: 45%;">Yol</th><th style="width: 35%;">Mesaj</th></tr>
+                        </thead>
+                        <tbody>{{DELETED_ROWS}}</tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function switchTab(event, tabId) {
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

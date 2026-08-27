@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura.scanner — PC-CHECKER</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --chrome-light: #ffffff;
+            --chrome-mid: #d1d5db;
+            --chrome-dark: #4b5563;
+            --radius-curved: 40px;
+            --text-main: #f9fafb;
+            --text-dim: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: transparent;
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            position: relative;
+        }
+
+        /* ARKA PLAN CIVA VE MOUSE ÇİZGİSİ CANVAS */
+        #bgCanvas, #trailCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #bgCanvas {
+            z-index: 1;
+        }
+
+        #trailCanvas {
+            z-index: 99;
+        }
+
+        /* ANA OVAL PENCERE (KENAR BOŞLUĞUSUZ, TAM TRANSPARAN CIVA GÖRÜNÜMÜ) */
+        .card {
+            position: relative;
+            z-index: 10;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 10, 15, 0.55);
+            border-radius: var(--radius-curved);
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 30px 36px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            animation: chromeOpening 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes chromeOpening {
+            0% {
+                opacity: 0;
+                transform: scale(0.95);
+                filter: blur(10px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0);
+            }
+        }
+
+        /* PIN / KEY GİRİŞ ANIMASYON EKRANI */
+        .pin-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 8, 0.85);
+            backdrop-filter: blur(20px);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transition: opacity 0.6s ease, visibility 0.6s;
+        }
+
+            .pin-overlay.hide {
+                opacity: 0;
+                visibility: hidden;
+            }
+
+        .pin-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            letter-spacing: 3px;
+            color: var(--chrome-mid);
+            text-transform: uppercase;
+        }
+
+        .pin-boxes {
+            display: flex;
+            gap: 12px;
+        }
+
+        .pin-box {
+            width: 50px;
+            height: 60px;
+            border-radius: 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            color: #ffffff;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+
+            .pin-box.active {
+                border-color: #ffffff;
+                background: rgba(255, 255, 255, 0.2);
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+                transform: scale(1.05);
+            }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .brand-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-chrome-glow {
+            position: absolute;
+            top: -10px;
+            left: -15px;
+            width: 130%;
+            height: 140%;
+            background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(209,213,219,0.1) 60%, transparent 100%);
+            filter: blur(16px);
+            opacity: 0.7;
+            z-index: 1;
+        }
+
+        .brand-name {
+            position: relative;
+            z-index: 2;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 22px;
+            letter-spacing: 2px;
+            background: linear-gradient(180deg, #ffffff 0%, #e5e7eb 40%, #9ca3af 70%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(255,255,255,0.3));
+        }
+
+        .brand-sub {
+            position: relative;
+            z-index: 2;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 9px;
+            letter-spacing: 3.5px;
+            color: var(--chrome-mid);
+            text-transform: uppercase;
+        }
+
+        .btn-close {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(0,0,0,0.4));
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 10;
+        }
+
+            .btn-close:hover {
+                background: #ffffff;
+                color: #000000;
+                box-shadow: 0 0 20px #ffffff;
+                transform: scale(1.1) rotate(90deg);
+            }
+
+        /* YENİ ÖZEL METİN ALANI */
+        .quote-row {
+            margin-top: 22px;
+            z-index: 10;
+        }
+
+        .quote-text {
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            font-style: italic;
+        }
+
+        .scan-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .radar {
+            width: 140px;
+            height: 140px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .radar-core {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffffff 0%, #9ca3af 100%);
+            box-shadow: 0 0 20px #ffffff, 0 0 40px rgba(255, 255, 255, 0.6);
+            z-index: 5;
+            animation: corePulse 1.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes corePulse {
+            0% {
+                transform: scale(0.9);
+                box-shadow: 0 0 15px #ffffff;
+            }
+
+            100% {
+                transform: scale(1.25);
+                box-shadow: 0 0 35px #ffffff, 0 0 50px rgba(209,213,219,0.8);
+            }
+        }
+
+        .arc {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            opacity: 0;
+            animation: arcExpand 2.8s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+        }
+
+            .arc:nth-child(1) {
+                width: 50px;
+                height: 50px;
+                border-top-color: #ffffff;
+                animation-delay: 0s;
+            }
+
+            .arc:nth-child(2) {
+                width: 85px;
+                height: 85px;
+                border-top-color: #d1d5db;
+                animation-delay: 0.4s;
+            }
+
+            .arc:nth-child(3) {
+                width: 120px;
+                height: 120px;
+                border-top-color: #9ca3af;
+                animation-delay: 0.8s;
+            }
+
+            .arc:nth-child(4) {
+                width: 150px;
+                height: 150px;
+                border-top-color: rgba(255,255,255,0.4);
+                animation-delay: 1.2s;
+            }
+
+        @keyframes arcExpand {
+            0% {
+                transform: scale(0.3) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.25) rotate(180deg);
+                opacity: 0;
+            }
+        }
+
+        .radar.hide {
+            display: none;
+        }
+
+        .done-icon {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+            .done-icon.show {
+                display: flex;
+                animation: completionGlow 0.9s ease-out forwards;
+            }
+
+        @keyframes completionGlow {
+            0% {
+                opacity: 0;
+                transform: scale(0.6);
+                filter: blur(12px);
+            }
+
+            50% {
+                transform: scale(1.1);
+                filter: blur(0);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .check-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 35px rgba(255, 255, 255, 0.5);
+        }
+
+            .check-circle span {
+                font-size: 36px;
+                color: #ffffff;
+                text-shadow: 0 0 10px #ffffff;
+            }
+
+        .done-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 2.5px;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+        }
+
+        .done-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+            text-align: center;
+        }
+
+        .footer {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 10;
+        }
+
+        .modules {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mod {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding: 7px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.4s;
+        }
+
+            .mod.on {
+                color: #000000;
+                border-color: #ffffff;
+                background: linear-gradient(135deg, #ffffff 0%, #d1d5db 100%);
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+                font-weight: 900;
+            }
+
+        .progress-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .status-text {
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        .status-pct {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .progress-track {
+            height: 7px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+            padding: 1px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #4b5563 0%, #9ca3af 40%, #ffffff 100%);
+            box-shadow: 0 0 15px #ffffff;
+            transition: width 0.4s ease;
+        }
+
+        .exit-wrap {
+            display: none;
+            justify-content: center;
+        }
+
+            .exit-wrap.show {
+                display: flex;
+            }
+
+        .btn-exit {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            padding: 14px 44px;
+            border-radius: 25px;
+            cursor: pointer;
+            border: 1.5px solid #ffffff;
+            background: linear-gradient(135deg, #ffffff, #9ca3af);
+            color: #000000;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+            .btn-exit:hover {
+                transform: translateY(-2px) scale(1.03);
+                box-shadow: 0 0 40px #ffffff;
+            }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ARKA PLAN CIVA TOPLARI -->
+    <canvas id="bgCanvas"></canvas>
+    <!-- MOUSE DÜZ ÇİZGİ İZİ -->
+    <canvas id="trailCanvas"></canvas>
+
+    <div class="card">
+        <!-- 5 HANELİ DİNAMİK RASTGELE KOD GİRİŞ OVERLAY -->
+        <div class="pin-overlay" id="pinOverlay">
+            <div class="pin-title">INITIALIZING SYSTEM ACCESS</div>
+            <div class="pin-boxes">
+                <div class="pin-box" id="b0">-</div>
+                <div class="pin-box" id="b1">-</div>
+                <div class="pin-box" id="b2">-</div>
+                <div class="pin-box" id="b3">-</div>
+                <div class="pin-box" id="b4">-</div>
+            </div>
+        </div>
+
+        <div class="header">
+            <div class="brand-container">
+                <div class="brand-chrome-glow"></div>
+                <div class="brand-name">Aura.scanner</div>
+                <div class="brand-sub">PC-CHECKER</div>
+            </div>
+            <button class="btn-close" id="btnClose" title="Close">✕</button>
+        </div>
+
+        <div class="quote-row">
+            <span class="quote-text">"Göğsünün daraldığını biliyoruz."</span>
+        </div>
+
+        <div class="scan-area">
+            <div class="radar" id="radar">
+                <div class="arc"></div>
+                <div class="arc"></div>
+                <div class="arc"></div>
+                <div class="arc"></div>
+                <div class="radar-core"></div>
+            </div>
+
+            <div class="done-icon" id="doneIcon">
+                <div class="check-circle"><span>✓</span></div>
+                <div class="done-title">SCAN COMPLETE</div>
+                <div class="done-sub">System safety check passed successfully.</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="modules" id="modules">
+                <div class="mod" data-m="sys">System</div>
+                <div class="mod" data-m="pe">PE</div>
+                <div class="mod" data-m="net">Network</div>
+                <div class="mod" data-m="rpf">RPF</div>
+                <div class="mod" data-m="ai">AI</div>
+            </div>
+
+            <div class="progress-section" id="progressSection">
+                <div class="status-row">
+                    <span class="status-text" id="statusText">Scanning system artifacts...</span>
+                    <span class="status-pct" id="statusPct">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <div class="exit-wrap" id="exitWrap">
+                <button class="btn-exit" id="btnExit">Exit Scan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+        function postToHost(msg) {
+        try {
+        if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(msg);
+        }
+        } catch (e) { }
+        }
+
+        function exitApp() { postToHost('EXIT_APP'); }
+
+        const radar = document.getElementById('radar');
+        const doneIcon = document.getElementById('doneIcon');
+        const btnClose = document.getElementById('btnClose');
+        const btnExit = document.getElementById('btnExit');
+        const exitWrap = document.getElementById('exitWrap');
+        const progressSection = document.getElementById('progressSection');
+        const progressFill = document.getElementById('progressFill');
+        const statusText = document.getElementById('statusText');
+        const statusPct = document.getElementById('statusPct');
+        const pinOverlay = document.getElementById('pinOverlay');
+        const mods = document.querySelectorAll('.mod');
+
+        function setModsByPercent(p) {
+        const order = ['sys', 'pe', 'net', 'rpf', 'ai'];
+        const n = Math.min(5, Math.floor(p / 20));
+        mods.forEach(function (el) {
+        const idx = order.indexOf(el.getAttribute('data-m'));
+        el.classList.toggle('on', idx >= 0 && idx < n);
+        });
+        if (p >= 100) mods.forEach(function (el) { el.classList.add('on'); });
+        }
+
+        function englishStatus(msg) {
+        if (!msg) return 'Scanning...';
+        const m = String(msg).toLowerCase();
+        if (m.indexOf('tamamland') >= 0 || m.indexOf('complete') >= 0) return 'Scan completed';
+        if (m.indexOf('sistem') >= 0 || m.indexOf('analiz') >= 0 || m.indexOf('rpf') >= 0 || m.indexOf('pe') >= 0)
+        return 'Scanning system artifacts...';
+        if (m.indexOf('hazir') >= 0 || m.indexOf('hazır') >= 0 || m.indexOf('prepar') >= 0)
+        return 'Preparing...';
+        return 'Scanning system artifacts...';
+        }
+
+        btnClose.addEventListener('click', exitApp);
+        btnExit.addEventListener('click', exitApp);
+
+        // RASTGELE RAKAMLARDA KİLİTLENEN HIZLI ANIMASYON
+        function runPinAnimation() {
+        const boxes = [
+        document.getElementById('b0'),
+        document.getElementById('b1'),
+        document.getElementById('b2'),
+        document.getElementById('b3'),
+        document.getElementById('b4')
+        ];
+
+        let completed = 0;
+
+        boxes.forEach((box, index) => {
+        box.classList.add('active');
+        let loop = setInterval(() => {
+        box.textContent = Math.floor(Math.random() * 10);
+        }, 30);
+
+        // Her kutu farklı süre sonra rastgele bir rakamda kilitlenir
+        let lockTime = 400 + (index * 250) + Math.random() * 200;
+        setTimeout(() => {
+        clearInterval(loop);
+        box.textContent = Math.floor(Math.random() * 9) + 1;
+        box.classList.remove('active');
+        completed++;
+
+        if (completed === 5) {
+        setTimeout(() => {
+        pinOverlay.classList.add('hide');
+        postToHost('START_SCAN');
+        }, 400);
+        }
+        }, lockTime);
+        });
+        }
+
+        window.addEventListener('load', runPinAnimation);
+
+        window.updateProgress = function (percent, message) {
+        const p = Math.max(0, Math.min(100, Number(percent) || 0));
+        progressFill.style.width = p + '%';
+        statusPct.textContent = p + '%';
+        statusText.textContent = englishStatus(message);
+        setModsByPercent(p);
+
+        if (p >= 100) {
+        radar.classList.add('hide');
+        doneIcon.classList.add('show');
+        progressSection.classList.add('hidden');
+        exitWrap.classList.add('show');
+        }
+        };
+
+        window.addFindingToUI = function () { };
+
+        window.setMetaInfo = function (installDate, score) {
+        window._metaInstall = installDate;
+        window._metaScore = score;
+        };
+
+        // CIVA SIVI TOPLARI (METABALLS)
+        const bgCanvas = document.getElementById('bgCanvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        let blobs = [];
+
+        function resizeBg() {
+        bgCanvas.width = window.innerWidth;
+        bgCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeBg);
+        resizeBg();
+
+        class LiquidBlob {
+        constructor() {
+        this.x = Math.random() * bgCanvas.width;
+        this.y = Math.random() * bgCanvas.height;
+        this.radius = Math.random() * 70 + 50;
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = (Math.random() - 0.5) * 1.5;
+        }
+
+        update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x - this.radius < 0 || this.x + this.radius > bgCanvas.width) this.vx *= -1;
+        if (this.y - this.radius < 0 || this.y + this.radius > bgCanvas.height) this.vy *= -1;
+        }
+
+        draw() {
+        bgCtx.beginPath();
+        let grad = bgCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.25)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        bgCtx.fillStyle = grad;
+        bgCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        bgCtx.fill();
+        }
+        }
+
+        for (let i = 0; i < 7; i++) {
+        blobs.push(new LiquidBlob());
+        }
+
+        function animateBg() {
+        bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+        blobs.forEach(b => {
+        b.update();
+        b.draw();
+        });
+        requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+        // MOUSE AKICI DÜZ ÇİZGİ İZİ EFEKTİ
+        const trailCanvas = document.getElementById('trailCanvas');
+        const tCtx = trailCanvas.getContext('2d');
+        let mousePoints = [];
+
+        function resizeTrail() {
+        trailCanvas.width = window.innerWidth;
+        trailCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeTrail);
+        resizeTrail();
+
+        window.addEventListener('mousemove', function (e) {
+        mousePoints.push({
+        x: e.clientX,
+        y: e.clientY,
+        alpha: 1.0
+        });
+        });
+
+        function animateTrailLine() {
+        tCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+
+        if (mousePoints.length > 1) {
+        for (let i = 0; i < mousePoints.length - 1; i++) {
+        let p1 = mousePoints[i];
+        let p2 = mousePoints[i + 1];
+
+        tCtx.beginPath();
+        tCtx.moveTo(p1.x, p1.y);
+        tCtx.lineTo(p2.x, p2.y);
+        tCtx.strokeStyle = `rgba(255, 255, 255, ${p1.alpha * 0.7})`;
+        tCtx.lineWidth = 3;
+        tCtx.lineCap = 'round';
+        tCtx.stroke();
+
+        p1.alpha -= 0.04;
+        }
+        }
+
+        mousePoints = mousePoints.filter(p => p.alpha > 0);
+        requestAnimationFrame(animateTrailLine);
+        }
+        animateTrailLine();
+        })();
+    </script>
+</body>
+</html>

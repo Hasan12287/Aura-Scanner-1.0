@@ -1,0 +1,12 @@
+﻿<Window x:Class="Aura.Scanner.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="Aura Scanner" Height="440" Width="680"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None" AllowsTransparency="True" Background="#01FFFFFF">
+    <!-- Background üzerindeki #01FFFFFF değeri, gözle görülmeyecek kadar az bir opaklık vererek şeffaf görünmesini sağlar ancak fare tıklamalarının algılanmasını (hit-test) engellemez. -->
+    <Grid Background="Transparent">
+        <wv2:WebView2 x:Name="Browser" Margin="0" DefaultBackgroundColor="Transparent"/>
+    </Grid>
+</Window>
